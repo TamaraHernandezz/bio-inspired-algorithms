@@ -1,0 +1,105 @@
+Tamara Hernández Romero | A01735955 
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+```
+
+
+```{python}
+np.random.seed(42)  
+
+n_part=5
+v_max = 2.0
+W = 0.7      
+C1 = 1.5      
+C2 = 1.5      
+dominio = (0, 25) 
+```
+
+```{python}
+def f(x):
+    return (x * np.sin(x)) / 2.0 + 10.0
+
+
+x=np.random.uniform(dominio[0], dominio[1],n_part)
+v=np.random.uniform(-v_max, v_max, n_part)
+
+pbest=np.copy(x)
+pbest_fit=f(pbest)
+
+history_x = [np.copy(x)]
+
+def obtener_gbest(x_actual, fit_actual):
+    gbest = np.zeros_like(x_actual)
+    for i in range(n_part) :
+        vecinos_idx = [(i - 1) %n_part, i, (i + 1) %n_part]
+        mejor_vecino_idx = vecinos_idx[np.argmin(fit_actual[vecinos_idx])]
+        gbest[i] = x_actual[mejor_vecino_idx]
+    return gbest
+
+print("Iniciando en t=0")
+for i in range(n_part):
+    print(f"P{i+1}: Posición = {x[i]:.4f}, Velocidad = {v[i]:.4f}, Fitness = {f(x[i]):.4f}")
+
+
+for ciclo in range(1, 3):
+    print(f"\n Ciclo: {ciclo}")
+    
+    fit_actual = f(x)
+    gbest = obtener_gbest(x, fit_actual)
+    
+    for i in range(n_part):
+        r1 = np.random.rand()
+        r2 = np.random.rand()
+        
+        v_nueva = (W * v[i] + 
+                   C1 * r1 * (pbest[i] - x[i]) + 
+                   C2 * r2 * (gbest[i] - x[i]))
+        
+
+        v_saturada = np.clip(v_nueva, -v_max, v_max)
+        
+        x_nueva = x[i] + v_saturada
+        fit_nuevo = f(x_nueva)
+        
+        if fit_nuevo < pbest_fit[i]:
+            pbest[i] = x_nueva
+            pbest_fit[i] = fit_nuevo
+            
+        print(f"P{i+1}: r1={r1:.4f}, r2={r2:.4f} | "
+              f"V_calc={v_nueva:.4f} -> V_sat={v_saturada:.4f} | "
+              f"X_nueva={x_nueva:.4f} | Fitness={fit_nuevo:.4f}")
+        
+        v[i] = v_saturada
+        x[i] = x_nueva
+        
+    history_x.append(np.copy(x))
+```
+
+
+
+
+```{python}
+
+
+x_plot = np.linspace(0, 27, 1000)
+y_plot = f(x_plot)
+
+plt.figure(figsize=(10, 5))
+plt.plot(x_plot, y_plot, label=r'$f(x) = \frac{x \cdot \sin(x)}{2} + 10$', color='navy', lw=2)
+
+colors = ['red', 'orange', 'green']
+labels = ['Inicial (t=0)', 'Ciclo 1 (t=1)', 'Ciclo 2 (t=2)']
+
+for idx, x_pos in enumerate(history_x):
+    plt.scatter(x_pos, f(x_pos), color=colors[idx], s=70, label=labels[idx], zorder=5)
+
+plt.title('Optimización de Enjambre de Partículas (PSO) - 2 Ciclos')
+plt.xlabel('x')
+plt.ylabel('f(x)')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.legend()
+plt.tight_layout()
+plt.show()
+```
